@@ -17,32 +17,31 @@
 # Builds and pushes docker image for each demo microservice.
 
 set -euo pipefail
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-REPO_ROOT=$SCRIPT_DIR/../..
+SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 log() { echo "$1" >&2; }
 
-TAG="${TAG:?TAG env variable must be specified}"
-REPO_PREFIX="${REPO_PREFIX:?REPO_PREFIX env variable must be specified}"
-PROJECT_ID="${PROJECT_ID:?PROJECT_ID env variable must be specified e.g. google-samples}"
+TAG="${TAG:--}"
+REPO_PREFIX="${REPO_PREFIX:-quay.io/signalfuse/microservices-demo-}"
 
 while IFS= read -d $'\0' -r dir; do
     # build image
     svcname="$(basename "${dir}")"
-    builddir="${dir}"
-    #PR 516 moved cartservice build artifacts one level down to src
-    if [ $svcname == "cartservice" ]
-    then
-        builddir="${dir}/src"
-    fi
-    image="${REPO_PREFIX}/$svcname:$TAG"
-    image_with_sample_public_image_tag="${REPO_PREFIX}/$svcname:sample-public-image-$TAG"
+    image="${REPO_PREFIX}$svcname"
     (
-        cd "${builddir}"
-        log "Building (and pushing) image on Google Cloud Build: ${image}"
-        gcloud builds submit --project=${PROJECT_ID} --tag=${image}
-        gcloud artifacts docker tags add ${image} ${image_with_sample_public_image_tag}
+        cd "${dir}"
+        log "Building: ${image}"
+        docker build -t "${image}:latest" .
+
+        log "Pushing: ${image}"
+        docker push "${image}:latest"
+
+        if [ ${TAG} != "-" ]
+        then
+            docker tag "${image}:latest" "${image}:$TAG"
+            docker push "${image}:$TAG"
+        fi
     )
-done < <(find "${REPO_ROOT}/src" -mindepth 1 -maxdepth 1 -type d -print0)
+done < <(find "${SCRIPTDIR}/../src" -mindepth 1 -maxdepth 1 -type d -print0)
 
 log "Successfully built and pushed all images."
