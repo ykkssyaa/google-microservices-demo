@@ -13,35 +13,12 @@
 # limitations under the License.
 
 ---
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: loki
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: loki
-  labels:
-    app: loki
-spec:
-  type: ClusterIP
-  selector:
-    app: loki
-  ports:
-    - port: 3100
-      targetPort: 3100
-      protocol: TCP
-
----
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: loki
-  labels:
-    app: loki
 spec:
+  serviceName: loki
   replicas: 1
   selector:
     matchLabels:
@@ -51,51 +28,33 @@ spec:
       labels:
         app: loki
     spec:
-      serviceAccountName: loki
-      securityContext:
-        fsGroup: 1000
-        runAsGroup: 1000
-        runAsNonRoot: true
-        runAsUser: 1000
       containers:
         - name: loki
-          image: grafana/loki:master
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            privileged: false
-            readOnlyRootFilesystem: true
-          imagePullPolicy: Always
-          args: ['-config.file=/etc/loki/loki-config.yaml']
+          image: grafana/loki:3.4.2
+          args:
+            - -config.file=/etc/loki/loki.yaml
           ports:
             - containerPort: 3100
-          resources:
-            requests:
-              memory: "256Mi"
-              cpu: "10m"
-            limits:
-              memory: "512Mi"
-              cpu: "500m"
+              name: http
           volumeMounts:
-            - name: loki-config
-              mountPath: /etc/loki/
+            - name: config
+              mountPath: /etc/loki
             - name: storage
-              mountPath: /tmp/loki
+              mountPath: /loki
       volumes:
-        - name: loki-config
+        - name: config
           configMap:
             name: loki-config
         - name: storage
           emptyDir: {}
+
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: loki-config
 data:
-  loki-config.yaml: |-
+  loki.yaml: |
     auth_enabled: false
     server:
       http_listen_port: 3100
@@ -103,19 +62,27 @@ data:
       lifecycler:
         address: 127.0.0.1
         ring:
-          store: inmemory
+          kvstore:
+            store: inmemory
           replication_factor: 1
+        final_sleep: 0s
+      chunk_idle_period: 5m
+      chunk_retain_period: 30s
     schema_config:
       configs:
-        - from: 0
-          store: boltdb
-          object_store: filesystem
-          schema: v13
-          index:
-            prefix: index_
-            period: 24h
+      - from: 2020-10-24
+        store: boltdb
+        object_store: filesystem
+        schema: v11
+        index:
+          prefix: index_
+          period: 168h
     storage_config:
       boltdb:
-        directory: /tmp/loki/index
+        directory: /loki/index
       filesystem:
-        directory: /tmp/loki/chunks
+        directory: /loki/chunks
+    limits_config:
+      enforce_metric_name: false
+      reject_old_samples: true
+      reject_old_samples_max_age: 168h
