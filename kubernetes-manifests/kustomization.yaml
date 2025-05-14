@@ -30,6 +30,8 @@ resources:
  - loki.yaml
  - grafana.yaml
  - promtail.yaml
+ # Roles
+ - cluster_roles.yaml
 # components:
 # - ../kustomize/components/cymbal-branding
 # - ../kustomize/components/google-cloud-operations
