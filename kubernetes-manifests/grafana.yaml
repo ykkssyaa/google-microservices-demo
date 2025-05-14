@@ -51,7 +51,7 @@ spec:
     spec:
       containers:
         - name: grafana
-          image: grafana/grafana:master
+          image: grafana/grafana:12.0.0
           imagePullPolicy: Always
           env:
             - name: GF_EXPLORE_ENABLED
@@ -74,15 +74,12 @@ metadata:
 data:
   loki.yaml: |-
     apiVersion: 1
-
-#    datasources:
-#      - name: Loki
-#        type: loki
-#        access: proxy
-#        url: http://loki:3100
-#        editable: false
-#      - name: prometheus
-#        type: prometheus
-#        access: proxy
-#        url: http://prometheus
-#        editable: false
+    datasources:
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://loki:3100
+        version: 1
+        editable: false
+        jsonData:
+          maxLines: 1000
