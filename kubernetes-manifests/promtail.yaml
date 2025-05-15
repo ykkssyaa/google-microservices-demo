@@ -19,6 +19,18 @@ metadata:
   namespace: default
 
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: promtail
+spec:
+  selector:
+    app: promtail
+  ports:
+    - port: 9080
+      targetPort: 9080
+
+---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -33,9 +45,16 @@ spec:
         app: promtail
     spec:
       serviceAccountName: promtail
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
       containers:
         - name: promtail
           image: grafana/promtail:3.0.0
+          securityContext:
+            privileged: true
           args:
             - -config.file=/etc/promtail/promtail.yaml
             - -log.level=debug
@@ -70,7 +89,7 @@ data:
       http_listen_port: 9080
       grpc_listen_port: 0
     positions:
-      filename: /tmp/positions.yaml
+      filename: /var/log/positions.yaml
     clients:
       - url: http://loki:3100/loki/api/v1/push
     scrape_configs:
@@ -78,7 +97,7 @@ data:
         kubernetes_sd_configs:
           - role: pod
         pipeline_stages:
-          - cri: { }
+          - docker: {}
         relabel_configs:
           - source_labels: [ __meta_kubernetes_namespace ]
             target_label: namespace
@@ -86,4 +105,3 @@ data:
             target_label: pod
           - source_labels: [ __meta_kubernetes_pod_container_name ]
             target_label: container
-
