@@ -45,16 +45,9 @@ spec:
         app: promtail
     spec:
       serviceAccountName: promtail
-      securityContext:
-        fsGroup: 1000
-        runAsGroup: 1000
-        runAsNonRoot: true
-        runAsUser: 1000
       containers:
         - name: promtail
           image: grafana/promtail:3.0.0
-          securityContext:
-            privileged: true
           args:
             - -config.file=/etc/promtail/promtail.yaml
             - -log.level=debug

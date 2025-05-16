@@ -8,5 +8,6 @@ stop.pods:
 	skaffold delete
 
 reload.promtail:
-	kubectl apply -f promtail-config.yaml; kubectl rollout restart daemonset/promtail
+	kubectl apply -f .\kubernetes-manifests\promtail.yaml
+	kubectl rollout restart daemonset/promtail
 
