@@ -21,6 +21,12 @@ datasources:
         access: proxy
         isDefault: false
         editable: true
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus-operated.monitoring.svc.cluster.local:9090
+        access: proxy
+        isDefault: false
+        editable: true
 
 service:
   type: NodePort
