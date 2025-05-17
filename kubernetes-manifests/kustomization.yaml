@@ -27,9 +27,10 @@ resources:
  - recommendationservice.yaml
  - shippingservice.yaml
  # monitoring
- - loki.yaml
- - grafana.yaml
- - promtail.yaml
+ - monitoring/loki.yaml
+ - monitoring/grafana.yaml
+ - monitoring/promtail.yaml
+ - monitoring/prometheus.yaml
  # Roles
  - cluster_roles.yaml
 # components:

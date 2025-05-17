@@ -1,5 +1,5 @@
 run.minikube:
-	minikube start --cpus=4 --memory 4096 --disk-size 32g --driver=docker
+	minikube start --cpus=6 --memory 8192 --disk-size 40g --driver=docker
 
 run.pods:
 	skaffold run
